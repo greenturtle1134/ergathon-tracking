@@ -5,15 +5,14 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "Hello World
+    return "Hello World"
 
 @app.route("/", methods=["PUT"])
 def update():
-    ergs = request.form['ergs']
-    data = request.form['data']
-    now = time()
-    for erg, val in zip(ergs, data):
-        # if erg not in distances:
-            # goal += val
-        # distances[erg] = val, now
-        print(erg, val)
+    count = 0
+    sum = 0
+    for erg in request.get_json():
+        count += 1
+        sum += erg["distance"]
+        app.logger.info("Processed erg {} with distance {!s}".format(erg["name"], erg["distance"]))
+    return "{!s} ergs adding to {!s} meters".format(count, sum)
