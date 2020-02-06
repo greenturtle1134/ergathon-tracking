@@ -12,4 +12,4 @@ def send_distances(data):
 
 if __name__ == "__main__":
     response = send_distances({"A":50, "B":100})
-    print(response.json())
+    print(response)
