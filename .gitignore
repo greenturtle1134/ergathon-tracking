@@ -130,3 +130,6 @@ dmypy.json
 
 # Information I don't want to go into the repository
 server_secret.py
+
+# Idea files
+.idea/*
