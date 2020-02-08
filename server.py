@@ -16,8 +16,8 @@ def get_db_cursor():
     return g.db_cur
 
 
-@app.teardown_appcontext()
-def teardown_appcontext():
+@app.teardown_appcontext
+def teardown(error):
     db_cur = g.pop("db_cur", None)
     if db_cur is not None:
         db_cur.close()
@@ -46,5 +46,5 @@ def update():
                        "DO UPDATE SET distance = EXCLUDED.distance, "
                        "name = EXCLUDED.name, "
                        "last_update = EXCLUDED.last_update",
-                       (erg["name"], erg["node"], erg["subnode"]. erg["distance"]))
+                       (erg["name"], erg["node"], erg["subnode"], erg["distance"]))
     return "{!s} ergs adding to {!s} meters".format(count, total)
