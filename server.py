@@ -40,11 +40,13 @@ def update():
     for erg in request.get_json():
         count += 1
         total += erg["distance"]
-        cursor.execute("INSERT INTO ergs (name, node, subnode, distance, last_update) "
+        cursor.execute("INSERT INTO ergs (erg_serial, node, subnode, distance, last_update) "
                        "VALUES (%s, %s, %s, %s, NOW()) "
-                       "ON CONFLICT ON CONSTRAINT unique_address "
+                       "ON CONFLICT ON CONSTRAINT unique_serial "
                        "DO UPDATE SET distance = EXCLUDED.distance, "
-                       "name = EXCLUDED.name, "
-                       "last_update = EXCLUDED.last_update",
-                       (erg["name"], erg["node"], erg["subnode"], erg["distance"]))
+                       "erg_serial = EXCLUDED.erg_serial, "
+                       "last_update = EXCLUDED.last_update,"
+                       "node = EXCLUDED.node,"
+                       "subnode = EXCLUDED.subnode",
+                       (erg["serial"], erg["node"], erg["subnode"], erg["distance"]))
     return "{!s} ergs adding to {!s} meters".format(count, total)
