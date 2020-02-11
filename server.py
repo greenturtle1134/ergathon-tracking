@@ -1,4 +1,4 @@
-from flask import Flask, request, current_app, g
+from flask import Flask, request, current_app, g, render_template
 from flask.cli import with_appcontext
 from time import time
 import server_secret
@@ -17,7 +17,7 @@ def get_db_cursor():
 
 
 @app.teardown_appcontext
-def teardown(error):
+def on_teardown(error):
     db_cur = g.pop("db_cur", None)
     if db_cur is not None:
         db_cur.close()
@@ -29,11 +29,27 @@ def teardown(error):
 
 @app.route("/")
 def index():
-    return "Hello World"
+    cur = get_db_cursor()
+    cur.execute("SELECT * FROM ergs;")
+    erg_matrix = cur.fetchall()
+    erg_stats = {
+        "sum": 0,
+    }
+    erg_list = list()
+    for id, erg_serial, node, subnode, distance, last_update in erg_matrix:
+        erg_stats["sum"] += distance
+        erg_list.append({
+            "serial": erg_serial,
+            "node": node,
+            "subnode": subnode,
+            "distance": distance
+        })
+    erg_stats["percent"] = distance*100/1000000
+    return render_template("index.html", erg_stats = erg_stats, erg_list = erg_list)
 
 
 @app.route("/ergs/", methods=["PUT"])
-def update():
+def on_erg_update():
     cursor = get_db_cursor()
     count = 0
     total = 0
