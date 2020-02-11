@@ -48,7 +48,7 @@ class Tracker:
         self.ergs = list()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
         for port in range(erg_count):
-            serial = DLL.GetSerialNumber(port)
+            serial = DLL.GetSerialNumber(port).decode("utf-8")
             self.ergs.append(Erg(serial, port))
             print("Discovered erg {}".format(serial))
         print("Discovered {} erg(s)".format(erg_count))
@@ -57,7 +57,7 @@ class Tracker:
         for erg in self.ergs:
             x = erg.update()
             print(x)
-        # self.send_distances()
+        self.send_distances()
 
     def send_info(self):
         return requests.post(SERVER + "nodes/", json={

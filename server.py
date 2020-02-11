@@ -44,7 +44,7 @@ def update():
                        "VALUES (%s, %s, %s, %s, NOW()) "
                        "ON CONFLICT ON CONSTRAINT unique_serial "
                        "DO UPDATE SET distance = EXCLUDED.distance, "
-                       "name = EXCLUDED.name, "
+                       "erg_serial = EXCLUDED.erg_serial, "
                        "last_update = EXCLUDED.last_update,"
                        "node = EXCLUDED.node,"
                        "subnode = EXCLUDED.subnode",
