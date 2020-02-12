@@ -150,3 +150,4 @@ PM3USBCP.lib
 PM3USBCP_Internal.h
 /ergathon_tracker.zip
 ergclient.exe
+*.zip

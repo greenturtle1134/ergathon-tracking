@@ -17,10 +17,6 @@ def load_dll(interface_path=""):
     path = interface_path + DLL_NAME  # Load DLL from lib folder
     DLL = WinDLL(path)
     print("Loaded interface DLL from {}".format(path))
-    start_error = DLL.Init()  # Init the interface and count ergs
-    if start_error != 0:
-        print("Error on DLL startup:", start_error)
-    print("Initialized DLL.")
 
 
 class Erg:
@@ -46,6 +42,10 @@ class Tracker:
         self.ergs = list()
 
     def discover_ergs(self):
+        start_error = DLL.Init()  # Init the interface and count ergs
+        if start_error != 0:
+            print("Error on DLL startup:", start_error)
+        print("Initialized DLL.")
         erg_count = DLL.GetNumDevices2()
         self.ergs = list()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
@@ -104,7 +104,7 @@ def get_node_name(node_id):
 
 def main():
     load_dll(input("Enter interface directory (blank for \\lib): "))
-    tracker_id = int(input("Enter tracker ID: "))
+    tracker_id = int(input("(IMPORTANT) Enter tracker ID: "))
     old_name = get_node_name(tracker_id)
     if old_name is None:
         old_name = str(tracker_id)
@@ -117,9 +117,14 @@ def main():
     tracker = Tracker(tracker_id, name)
     tracker.send_info()
     log_period = 600
-    period_input = input("Enter log period (blank to continue using {}s): ".format(str(log_period)))
+    period_input = input("Enter approx. log period (blank to continue using {}s): ".format(str(log_period)))
     if len(period_input) > 0:
         log_period = int(period_input)
+
+    refresh_period = 1200
+    period_input = input("Enter approx. re-discover period (blank to continue using {}s): ".format(str(refresh_period)))
+    if len(period_input) > 0:
+        refresh_period = int(period_input)
     print("================\n")
     input("Ready to discover ergs! (Enter to continue)")
     tracker.discover_ergs()
@@ -127,11 +132,14 @@ def main():
     print()
     count = 0
     while True:
-        sleep(1)
+        sleep(0.8)
         count += 1
         tracker.update_ergs()
-        if count % log_period:
+        if count % log_period == 0:
             print("[{}]:".format(str(datetime.datetime.now())), tracker.erg_string())
+        if count % refresh_period == 0:
+            print("[{}]:".format(str(datetime.datetime.now())), "Refreshing ergs.")
+            tracker.discover_ergs()
 
 
 if __name__ == "__main__":
