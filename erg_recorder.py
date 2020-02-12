@@ -104,7 +104,7 @@ def main():
         name = input("Enter tracker name (blank to use id): ".format(old_name))
     else:
         print("Name found on server:", old_name)
-        name = input("Enter tracker name (blank to continue using \"{}\"}): ".format(old_name))
+        name = input("Enter tracker name (blank to continue using \"{}\"): ".format(old_name))
     if len(name) == 0:
         name = old_name
     tracker = Tracker(tracker_id, name)
