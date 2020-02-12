@@ -6,7 +6,7 @@ import server_secret
 import psycopg2
 
 app = Flask(__name__)
-start_time = datetime(2020, 2, 13, 4, 30)
+start_time = datetime(2020, 2, 13, 16, 15)
 goal = 1000000
 in_progress = False
 
@@ -55,10 +55,13 @@ def show_progress_screen():
     percent = total * 100 / goal
     elapsed = datetime.now() - start_time
     speed = total / elapsed.total_seconds()
-    pace_delta = elapsed / (total / 500 / count)
-    pace = str(pace_delta.seconds // 60) + ":" + str(pace_delta.seconds % 60)
+    if total > 0 and count > 0:
+        pace_delta = elapsed / (total / 500 / count)
+        pace = str(pace_delta.seconds // 60) + ":" + str(pace_delta.seconds % 60).zfill(2)
+    else:
+        pace = "-:--"
     return render_template("index.html", sum=total, percent=percent, goal=goal,
-                           time=time, speed=speed, pace=pace, elapsed=elapsed, erg_list=erg_list)
+                           time=str(time), speed=speed, pace=pace, elapsed=elapsed, erg_list=erg_list, count=count)
 
 
 @app.route("/ergs/", methods=["PUT"])
