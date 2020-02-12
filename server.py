@@ -97,5 +97,8 @@ def register_node():
 def query_node(node_id):
     cursor = get_db_cursor()
     cursor.execute("SELECT name FROM nodes WHERE node_id = %s;", (node_id,))
-    result = cursor.fetchone()[0]
-    return result if result is not None else ""
+    result = cursor.fetchone()
+    if result is not None:
+        return result[0]
+    else:
+        return ""
