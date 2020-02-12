@@ -13,8 +13,9 @@ def load_dll(interface_path=""):
     global DLL
     if len(interface_path) == 0:
         interface_path = os.path.dirname(os.path.abspath(__file__))
-    DLL = WinDLL(interface_path + "\\" + DLL_NAME)  # Load DLL from same folder
-    print("Loaded interface DLL from {}".format(interface_path + "\\" + DLL_NAME))
+    path = interface_path + "\\lib\\" + DLL_NAME # Load DLL from lib folder
+    DLL = WinDLL(path)
+    print("Loaded interface DLL from {}".format(path))
     start_error = DLL.Init()  # Init the interface and count ergs
     if start_error != 0:
         print("Error on DLL startup:", start_error)
