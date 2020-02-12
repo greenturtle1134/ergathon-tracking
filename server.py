@@ -1,10 +1,14 @@
-from flask import Flask, request, current_app, g
+from flask import Flask, request, current_app, g, render_template
 from flask.cli import with_appcontext
 from time import time
+from datetime import *
 import server_secret
 import psycopg2
 
 app = Flask(__name__)
+start_time = datetime(2020, 2, 13, 4, 30)
+goal = 1000000
+in_progress = False
 
 
 def get_db_cursor():
@@ -17,7 +21,7 @@ def get_db_cursor():
 
 
 @app.teardown_appcontext
-def teardown(error):
+def on_teardown(error):
     db_cur = g.pop("db_cur", None)
     if db_cur is not None:
         db_cur.close()
@@ -29,11 +33,36 @@ def teardown(error):
 
 @app.route("/")
 def index():
-    return "Hello World"
+    return show_progress_screen()
+
+
+def show_progress_screen():
+    cur = get_db_cursor()
+    cur.execute("SELECT * FROM ergs;")
+    erg_matrix = cur.fetchall()
+    total = 0
+    count = 0
+    erg_list = list()
+    for erg_id, erg_serial, node, subnode, distance, last_update in erg_matrix:
+        total += distance
+        count += 1
+        erg_list.append({
+            "serial": erg_serial,
+            "node": node,
+            "subnode": subnode,
+            "distance": distance
+        })
+    percent = total * 100 / goal
+    elapsed = datetime.now() - start_time
+    speed = total / elapsed.total_seconds()
+    pace_delta = elapsed / (total / 500 / count)
+    pace = str(pace_delta.seconds // 60) + ":" + str(pace_delta.seconds % 60)
+    return render_template("index.html", sum=total, percent=percent, goal=goal,
+                           time=time, speed=speed, pace=pace, elapsed=elapsed, erg_list=erg_list)
 
 
 @app.route("/ergs/", methods=["PUT"])
-def update():
+def on_erg_update():
     cursor = get_db_cursor()
     count = 0
     total = 0
@@ -50,3 +79,26 @@ def update():
                        "subnode = EXCLUDED.subnode",
                        (erg["serial"], erg["node"], erg["subnode"], erg["distance"]))
     return "{!s} ergs adding to {!s} meters".format(count, total)
+
+
+@app.route("/nodes/", methods=["POST"])
+def register_node():
+    data = request.get_json()
+    cursor = get_db_cursor()
+    cursor.execute("INSERT INTO nodes (node_id, name) "
+                   "VALUES (%s, %s) "
+                   "ON CONFLICT ON CONSTRAINT unique_id "
+                   "DO UPDATE SET name = EXCLUDED.name",
+                   (data["id"], data["name"]))
+    return "Name recorded."
+
+
+@app.route("/nodes/<int:node_id>")
+def query_node(node_id):
+    cursor = get_db_cursor()
+    cursor.execute("SELECT name FROM nodes WHERE node_id = %s;", (node_id,))
+    result = cursor.fetchone()
+    if result is not None:
+        return result[0]
+    else:
+        return ""

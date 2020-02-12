@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="5">
+    <title>TJ Ergathon Tracker</title>
+    <style>
+      table,
+      td,
+      th {
+        border: 1px solid black;
+      }
+      table {
+        width: 100%;
+      }
+
+    </style>
+</head>
+<body>
+<h1>TJ 2020 ERGATHON:</h1>
+<h1>{{percent}}% COMPLETE</h1>
+<table>
+    <tr>
+        <td>Meters rowed:</td>
+        <td><strong>{{sum}}</strong></td>
+    </tr>
+    <tr>
+        <td>Goal:</td>
+        <td>{{goal}}</td>
+    </tr>
+    <tr>
+        <td>Elapsed time:</td>
+        <td><strong>{{time}}</strong></td>
+    </tr>
+    <tr>
+        <td>Total speed:</td>
+        <td><strong>{{speed}}</strong> m/s</td>
+    </tr>
+    <tr>
+        <td>Average split:</td>
+        <td><strong>{{pace}}</strong>/500m</td>
+    </tr>
+    <tr>
+        <td>Estimated time remaining:</td>
+        <td><strong></strong></td>
+    </tr>
+    <tr>
+        <td>Estimated finish time:</td>
+        <td><strong></strong></td>
+    </tr>
+    <tr>
+        <td>Ergs connected:</td>
+        <td>{{count}}</td>
+    </tr>
+</table>
+<h2>Individual ergs:</h2>
+<table>
+    <tr>
+        <th>Node</th>
+        <th>Subnode</th>
+        <th>Serial</th>
+        <th>Distance</th>
+    </tr>
+    {% for item in erg_list %}
+    <tr>
+        <td>{{item.node}}</td>
+        <td>{{item.subnode}}</td>
+        <td>{{item.serial}}</td>
+        <td>{{item.distance}}</td>
+    </tr>
+    {% endfor %}
+</table>
+<i>(Refresh to update. Page will auto-refresh every 5 seconds)</i>
+</body>
+</html>
