@@ -91,3 +91,11 @@ def register_node():
                    "DO UPDATE SET name = EXCLUDED.name",
                    (data["id"], data["name"]))
     return "Name recorded."
+
+
+@app.route("/nodes/<int:node_id>")
+def query_node(node_id):
+    cursor = get_db_cursor()
+    cursor.execute("SELECT name FROM nodes WHERE node_id = %s;", (node_id,))
+    result = cursor.fetchone()[0]
+    return result if result is not None else ""

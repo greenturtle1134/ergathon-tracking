@@ -64,10 +64,14 @@ class Tracker:
         self.send_distances()
 
     def send_info(self):
-        return requests.post(SERVER + "nodes/", json={
+        response = requests.post(SERVER + "nodes/", json={
             "name": self.node_name,
             "id": self.node_id
         })
+        if response.status_code == 200:
+            print("Updated server's node registry.")
+        else:
+            print("ERROR:", response.status_code, response.reason, "in sending node data.")
 
     def send_distances(self):
         data = list()
@@ -78,14 +82,34 @@ class Tracker:
                 "node": self.node_id,
                 "subnode": erg.port,
             })
-        return requests.put(SERVER + "ergs/", json=data)
+        response = requests.put(SERVER + "ergs/", json=data)
+        if response.status_code != 200:
+            print("Error in sending:", response)
+
+
+def get_node_name(node_id):
+    response = requests.get(SERVER + "nodes/" + str(node_id))
+    if response.status_code == 200 and len(response.text)>0:
+        return response.text
+    else:
+        return None
 
 
 def main():
     load_dll(input("Enter interface directory (blank for this one): "))
-    tracker = Tracker(int(input("Enter tracker ID: ")), input("Enter tracker name (blank to use ID): "))
-    input("Ready! (Enter to begin)")
+    tracker_id = int(input("Enter tracker ID: "))
+    old_name = get_node_name(tracker_id)
+    if old_name is None:
+        old_name = str(tracker_id)
+        name = input("Enter tracker name (blank to use id): ".format(old_name))
+    else:
+        print("Name found on server:", old_name)
+        name = input("Enter tracker name (blank to continue using \"{}\"}): ".format(old_name))
+    if len(name) == 0:
+        name = old_name
+    tracker = Tracker(tracker_id, name)
     tracker.send_info()
+    input("Ready! (Enter to begin)")
     while True:
         sleep(1)
         tracker.update_ergs()
