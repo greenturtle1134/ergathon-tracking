@@ -60,8 +60,24 @@ class Tracker:
         log("Discovered {} erg(s)".format(erg_count))
 
     def update_ergs(self):
+        anomaly = False
         for erg in self.ergs:
-            erg.update()
+            if not(-10 <= erg.update() <= 40000):
+                anomaly = True
+        if anomaly:
+            log("Anomalous distance value detected!")
+            log("Refreshing network topology...")
+            self.discover_ergs()
+            log("Retrying update.")
+            anomaly = False
+            for erg in self.ergs:
+                if not (-10 <= erg.update() <= 40000):
+                    anomaly = True
+            log(self.erg_string())
+            if anomaly:
+                log("...still broken.")
+            else:
+                log("...success!")
         self.send_distances()
 
     def send_info(self):
@@ -120,12 +136,12 @@ def main():
         name = old_name
     tracker = Tracker(tracker_id, name)
     tracker.send_info()
-    log_period = 60
+    log_period = 10
     period_input = input("Enter approx. log period (blank to continue using {}s): ".format(str(log_period)))
     if len(period_input) > 0:
         log_period = int(period_input)
 
-    refresh_period = 1200
+    refresh_period = 60
     period_input = input("Enter approx. re-discover period (blank to continue using {}s): ".format(str(refresh_period)))
     if len(period_input) > 0:
         refresh_period = int(period_input)
