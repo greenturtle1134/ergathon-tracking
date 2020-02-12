@@ -1,3 +1,4 @@
+import datetime
 import os
 from time import sleep
 
@@ -12,8 +13,8 @@ DLL = None
 def load_dll(interface_path=""):
     global DLL
     if len(interface_path) == 0:
-        interface_path = os.path.dirname(os.path.abspath(__file__))
-    path = interface_path + "\\lib\\" + DLL_NAME # Load DLL from lib folder
+        interface_path = os.path.dirname(os.path.abspath(__file__)) + "\\lib\\"
+    path = interface_path + DLL_NAME  # Load DLL from lib folder
     DLL = WinDLL(path)
     print("Loaded interface DLL from {}".format(path))
     start_error = DLL.Init()  # Init the interface and count ergs
@@ -37,15 +38,15 @@ class Erg:
 class Tracker:
 
     def __init__(self, node_id, node_name=None):
-
         self.node_id = node_id
         if node_name is None or len(node_name) == 0:
             self.node_name = str(node_id)  # If no node name is given, default to the ID
         else:
             self.node_name = node_name
+        self.ergs = list()
 
+    def discover_ergs(self):
         erg_count = DLL.GetNumDevices2()
-
         self.ergs = list()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
         serials = set()
@@ -60,8 +61,7 @@ class Tracker:
 
     def update_ergs(self):
         for erg in self.ergs:
-            x = erg.update()
-            print(x)
+            erg.update()
         self.send_distances()
 
     def send_info(self):
@@ -87,17 +87,23 @@ class Tracker:
         if response.status_code != 200:
             print("Error in sending:", response)
 
+    def __str__(self):
+        return "Tracker {} ({}) with ergs {}" .format(self.node_name, self.node_id, self.erg_string())
+
+    def erg_string(self):
+        return ", ".join(("{} ({}m)".format(erg.serial, erg.distance) for erg in self.ergs))
+
 
 def get_node_name(node_id):
     response = requests.get(SERVER + "nodes/" + str(node_id))
-    if response.status_code == 200 and len(response.text)>0:
+    if response.status_code == 200 and len(response.text) > 0:
         return response.text
     else:
         return None
 
 
 def main():
-    load_dll(input("Enter interface directory (blank for this one): "))
+    load_dll(input("Enter interface directory (blank for \\lib): "))
     tracker_id = int(input("Enter tracker ID: "))
     old_name = get_node_name(tracker_id)
     if old_name is None:
@@ -110,10 +116,22 @@ def main():
         name = old_name
     tracker = Tracker(tracker_id, name)
     tracker.send_info()
-    input("Ready! (Enter to begin)")
+    log_period = 600
+    period_input = input("Enter log period (blank to continue using {}s): ".format(str(log_period)))
+    if len(period_input) > 0:
+        log_period = int(period_input)
+    print("================\n")
+    input("Ready to discover ergs! (Enter to continue)")
+    tracker.discover_ergs()
+    input("Proceed? (Enter to continue)")
+    print()
+    count = 0
     while True:
         sleep(1)
+        count += 1
         tracker.update_ergs()
+        if count % log_period:
+            print("[{}]:".format(str(datetime.datetime.now())), tracker.erg_string())
 
 
 if __name__ == "__main__":
