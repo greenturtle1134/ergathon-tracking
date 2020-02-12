@@ -19,8 +19,6 @@
 
 extern "C" __declspec(dllexport) UINT16_T __cdecl GetNumDevices()
 {
-    UINT16_T i;
-    UINT16_T j;
     UINT16_T numOldPM3Devices = 0;
     UINT16_T numNewPM3Devices = 0;
     UINT16_T numPM4Devices = 0;
@@ -65,13 +63,40 @@ extern "C" __declspec(dllexport) UINT16_T __cdecl GetNumDevices()
         numPM5Devices = numCommunicating - numNewPM3Devices - numOldPM3Devices - numPM4Devices;
     }
 
-    // Initialize each of the PMs discovered
-    j = numCommunicating;
-    for (i = 0; i<j; i++)
+    return numCommunicating;
+}
+
+extern "C" __declspec(dllexport) UINT16_T __cdecl GetNumDevices2()
+{
+    ERRCODE_T ecode = 0;
+    UINT16_T numCommunicating = 0;
+    ecode = tkcmdsetDDI_discover_pm3s("Concept", numCommunicating, &numCommunicating);
+    return numCommunicating;
+}
+
+extern "C" __declspec(dllexport) UINT16_T __cdecl GetNumDevicesForPMVersion(int ver)
+{
+    ERRCODE_T ecode = 0;
+    UINT16_T numCommunicating = 0;
+
+    switch (ver)
     {
-
+    case 2:
+        // Look for old style PM3 devices, starting numbering after the previous
+        ecode = tkcmdsetDDI_discover_pm3s(TKCMDSET_PM3_PRODUCT_NAME, 0, &numCommunicating);
+    case 3:
+        // Look for PM3 devices
+        ecode = tkcmdsetDDI_discover_pm3s(TKCMDSET_PM3_PRODUCT_NAME2, 0, &numCommunicating);
+        break;
+    case 4:
+        // Look for PM4 devices
+        ecode = tkcmdsetDDI_discover_pm3s(TKCMDSET_PM4_PRODUCT_NAME, 0, &numCommunicating);
+        break;
+    case 5:
+        // Look for PM5 devices
+        ecode = tkcmdsetDDI_discover_pm3s(TKCMDSET_PM5_PRODUCT_NAME, 0, &numCommunicating);
+        break;
     }
-
     return numCommunicating;
 }
 
@@ -108,7 +133,7 @@ extern "C" __declspec(dllexport) int __cdecl Init()
     if (!ecode)
     {
         // Init CSAFE protocol
-        ecode = tkcmdsetCSAFE_init_protocol(100);
+        ecode = tkcmdsetCSAFE_init_protocol(1000);
 
     }
     return ecode;

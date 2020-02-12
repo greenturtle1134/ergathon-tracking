@@ -53,10 +53,10 @@ def show_progress_screen():
             "distance": distance
         })
     percent = total * 100 / goal
-    elapsed = datetime.now()-start_time
-    speed = total/elapsed.total_seconds()
-    pace_delta = elapsed/(total/500/count)
-    pace = str(pace_delta.seconds//60)+":"+str(pace_delta.seconds%60)
+    elapsed = datetime.now() - start_time
+    speed = total / elapsed.total_seconds()
+    pace_delta = elapsed / (total / 500 / count)
+    pace = str(pace_delta.seconds // 60) + ":" + str(pace_delta.seconds % 60)
     return render_template("index.html", sum=total, percent=percent, goal=goal,
                            time=time, speed=speed, pace=pace, elapsed=elapsed, erg_list=erg_list)
 
@@ -79,3 +79,15 @@ def on_erg_update():
                        "subnode = EXCLUDED.subnode",
                        (erg["serial"], erg["node"], erg["subnode"], erg["distance"]))
     return "{!s} ergs adding to {!s} meters".format(count, total)
+
+
+@app.route("/nodes/", methods=["POST"])
+def register_node():
+    data = request.get_json()
+    cursor = get_db_cursor()
+    cursor.execute("INSERT INTO nodes (node_id, name) "
+                   "VALUES (%s, %s) "
+                   "ON CONFLICT ON CONSTRAINT unique_id "
+                   "DO UPDATE SET name = EXCLUDED.name",
+                   (data["id"], data["name"]))
+    return "Name recorded."

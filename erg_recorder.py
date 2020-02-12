@@ -43,12 +43,16 @@ class Tracker:
         else:
             self.node_name = node_name
 
-        erg_count = DLL.GetNumDevices()
+        erg_count = DLL.GetNumDevices2()
 
         self.ergs = list()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
+        serials = set()
         for port in range(erg_count):
             serial = DLL.GetSerialNumber(port).decode("utf-8")
+            if serial in serials:
+                print("ERROR: Repeated serial!")
+            serials.add(serial)
             self.ergs.append(Erg(serial, port))
             print("Discovered erg {}".format(serial))
         print("Discovered {} erg(s)".format(erg_count))
@@ -80,7 +84,8 @@ class Tracker:
 def main():
     load_dll(input("Enter interface directory (blank for this one): "))
     tracker = Tracker(int(input("Enter tracker ID: ")), input("Enter tracker name (blank to use ID): "))
-    # tracker.send_info()
+    input("Ready! (Enter to begin)")
+    tracker.send_info()
     while True:
         sleep(1)
         tracker.update_ergs()
