@@ -44,8 +44,8 @@ class Tracker:
     def discover_ergs(self):
         start_error = DLL.Init()  # Init the interface and count ergs
         if start_error != 0:
-            print("Error on DLL startup:", start_error)
-        print("Initialized DLL.")
+            log("Error on DLL startup: " + str(start_error))
+        log("Initialized DLL.")
         erg_count = DLL.GetNumDevices2()
         self.ergs = list()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
@@ -53,15 +53,31 @@ class Tracker:
         for port in range(erg_count):
             serial = DLL.GetSerialNumber(port).decode("utf-8")
             if serial in serials:
-                print("ERROR: Repeated serial!")
+                log("ERROR: Repeated serial!")
             serials.add(serial)
             self.ergs.append(Erg(serial, port))
-            print("Discovered erg {}".format(serial))
-        print("Discovered {} erg(s)".format(erg_count))
+            log("Discovered erg {}".format(serial))
+        log("Discovered {} erg(s)".format(erg_count))
 
     def update_ergs(self):
+        anomaly = False
         for erg in self.ergs:
-            erg.update()
+            if not(0 <= erg.update() <= 40000):
+                anomaly = True
+        if anomaly:
+            log("Incorrect distance value detected!")
+            log("Refreshing network topology...")
+            self.discover_ergs()
+            log("Retrying update.")
+            anomaly = False
+            for erg in self.ergs:
+                if not (-10 <= erg.update() <= 40000):
+                    anomaly = True
+            log(self.erg_string())
+            if anomaly:
+                log("...still broken.")
+            else:
+                log("...success!")
         self.send_distances()
 
     def send_info(self):
@@ -70,9 +86,9 @@ class Tracker:
             "id": self.node_id
         })
         if response.status_code == 200:
-            print("Updated server's node registry.")
+            log("Updated server's node registry.")
         else:
-            print("ERROR:", response.status_code, response.reason, "in sending node data.")
+            log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending node data.")))
 
     def send_distances(self):
         data = list()
@@ -85,7 +101,7 @@ class Tracker:
             })
         response = requests.put(SERVER + "ergs/", json=data)
         if response.status_code != 200:
-            print("Error in sending:", response)
+            log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending erg data.")))
 
     def __str__(self):
         return "Tracker {} ({}) with ergs {}" .format(self.node_name, self.node_id, self.erg_string())
@@ -102,6 +118,10 @@ def get_node_name(node_id):
         return None
 
 
+def log(string):
+    print("[{}]:".format(str(datetime.datetime.now())), string)
+
+
 def main():
     load_dll(input("Enter interface directory (blank for \\lib): "))
     tracker_id = int(input("(IMPORTANT) Enter tracker ID: "))
@@ -116,12 +136,12 @@ def main():
         name = old_name
     tracker = Tracker(tracker_id, name)
     tracker.send_info()
-    log_period = 600
+    log_period = 10
     period_input = input("Enter approx. log period (blank to continue using {}s): ".format(str(log_period)))
     if len(period_input) > 0:
         log_period = int(period_input)
 
-    refresh_period = 1200
+    refresh_period = 60
     period_input = input("Enter approx. re-discover period (blank to continue using {}s): ".format(str(refresh_period)))
     if len(period_input) > 0:
         refresh_period = int(period_input)
@@ -136,9 +156,9 @@ def main():
         count += 1
         tracker.update_ergs()
         if count % log_period == 0:
-            print("[{}]:".format(str(datetime.datetime.now())), tracker.erg_string())
+            log(tracker.erg_string())
         if count % refresh_period == 0:
-            print("[{}]:".format(str(datetime.datetime.now())), "Refreshing ergs.")
+            log("Refreshing ergs.")
             tracker.discover_ergs()
 
 
