@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TJ Ergathon</title>
+</head>
+<body>
+<p>This form is for manual entry of erg distances for ergs that aren't working with the USBs.</p>
+<form>
+    <select name="name">
+        {% for item in erg_list %}
+        <option value="{{item.serial}}">{{item.serial}}</option>
+        {% endfor %}
+    </select>
+    <input name="distance"/>
+    <input type="submit"/>
+</form>
+<p>Create new manual erg:</p>
+<form>
+    Name: <input name="name"/><br>
+    Distance: <input name="distance" value="0"/><br>
+    <input type="submit"/>
+</form>
+</body>
+</html>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="5">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>TJ Ergathon Tracker</title>
     <style>
       table,
@@ -11,7 +12,7 @@
         border: 1px solid black;
       }
       table {
-        width: 100%;
+        width: 50%;
       }
 
     </style>
@@ -20,6 +21,7 @@
 <h1>TJ 2020 ERGATHON:</h1>
 <h1>{{percent}}% COMPLETE</h1>
 <table>
+    <col width=200>
     <tr>
         <td>Meters rowed:</td>
         <td><strong>{{sum}}</strong></td>
@@ -29,8 +31,12 @@
         <td>{{goal}}</td>
     </tr>
     <tr>
+        <td>Start time:</td>
+        <td>{{time}}</td>
+    </tr>
+    <tr>
         <td>Elapsed time:</td>
-        <td><strong>{{time}}</strong></td>
+        <td><strong>{{elapsed}}</strong></td>
     </tr>
     <tr>
         <td>Total speed:</td>
@@ -57,14 +63,12 @@
 <table>
     <tr>
         <th>Node</th>
-        <th>Subnode</th>
         <th>Serial</th>
         <th>Distance</th>
     </tr>
     {% for item in erg_list %}
     <tr>
         <td>{{item.node}}</td>
-        <td>{{item.subnode}}</td>
         <td>{{item.serial}}</td>
         <td>{{item.distance}}</td>
     </tr>
