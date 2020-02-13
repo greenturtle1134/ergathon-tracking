@@ -6,7 +6,7 @@ import server_secret
 import psycopg2
 
 app = Flask(__name__)
-start_time = datetime(2020, 2, 12, 17, 45)
+start_time = datetime(2020, 2, 13, 16, 30)
 goal = 1000000
 in_progress = False
 
