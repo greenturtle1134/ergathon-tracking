@@ -121,7 +121,7 @@ extern "C" __declspec(dllexport) int __cdecl GetDistance(int port)
     UINT16_T rsp_data_size = 100;
     UINT32_T rsp_data[100];
     ERRCODE_T ecode = tkcmdsetCSAFE_command(port, cmd_data_size, &cmd_data, &rsp_data_size, rsp_data);
-    return (int64_t)rsp_data[2] + (((int64_t)rsp_data[3]) << 8);
+    return ecode == 0 ? ((int64_t)rsp_data[2] + (((int64_t)rsp_data[3]) << 8)) : -1;
 }
 
 extern "C" __declspec(dllexport) int __cdecl Init()
