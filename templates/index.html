@@ -11,7 +11,7 @@
         border: 1px solid black;
       }
       table {
-        width: 100%;
+        width: 50%;
       }
 
     </style>
@@ -30,8 +30,12 @@
         <td>{{goal}}</td>
     </tr>
     <tr>
+        <td>Start time:</td>
+        <td>{{time}}</td>
+    </tr>
+    <tr>
         <td>Elapsed time:</td>
-        <td><strong>{{time}}</strong></td>
+        <td><strong>{{elapsed}}</strong></td>
     </tr>
     <tr>
         <td>Total speed:</td>
@@ -58,14 +62,12 @@
 <table>
     <tr>
         <th>Node</th>
-        <th>Subnode</th>
         <th>Serial</th>
         <th>Distance</th>
     </tr>
     {% for item in erg_list %}
     <tr>
         <td>{{item.node}}</td>
-        <td>{{item.subnode}}</td>
         <td>{{item.serial}}</td>
         <td>{{item.distance}}</td>
     </tr>

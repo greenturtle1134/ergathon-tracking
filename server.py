@@ -6,7 +6,7 @@ import server_secret
 import psycopg2
 
 app = Flask(__name__)
-start_time = datetime(2020, 2, 13, 16, 15)
+start_time = datetime(2020, 2, 12, 17, 45)
 goal = 1000000
 in_progress = False
 
@@ -38,7 +38,7 @@ def index():
 
 def show_progress_screen():
     cur = get_db_cursor()
-    cur.execute("SELECT * FROM ergs;")
+    cur.execute("SELECT * FROM ergs ORDER BY node, erg_serial;")
     erg_matrix = cur.fetchall()
     total = 0
     count = 0
@@ -60,8 +60,16 @@ def show_progress_screen():
         pace = str(pace_delta.seconds // 60) + ":" + str(pace_delta.seconds % 60).zfill(2)
     else:
         pace = "-:--"
-    return render_template("index.html", sum=total, percent=percent, goal=goal,
-                           time=str(time), speed=speed, pace=pace, elapsed=elapsed, erg_list=erg_list, count=count)
+    return render_template("index.html",
+                        sum=total,
+                        percent=percent,
+                        goal=goal,
+                        time=start_time.strftime("%I:%M:%S %p"),
+                        speed=speed,
+                        pace=pace,
+                        elapsed=str(elapsed).split(".", 2)[0],
+                        erg_list=erg_list,
+                        count=count)
 
 
 @app.route("/ergs/", methods=["PUT"])
@@ -71,17 +79,48 @@ def on_erg_update():
     total = 0
     for erg in request.get_json():
         count += 1
-        total += erg["distance"]
-        cursor.execute("INSERT INTO ergs (erg_serial, node, subnode, distance, last_update) "
-                       "VALUES (%s, %s, %s, %s, NOW()) "
-                       "ON CONFLICT ON CONSTRAINT unique_serial "
-                       "DO UPDATE SET distance = EXCLUDED.distance, "
-                       "erg_serial = EXCLUDED.erg_serial, "
-                       "last_update = EXCLUDED.last_update,"
-                       "node = EXCLUDED.node,"
-                       "subnode = EXCLUDED.subnode",
-                       (erg["serial"], erg["node"], erg["subnode"], erg["distance"]))
+        distance = erg["distance"]
+        if 0 <= distance <= 30000:
+            total += distance
+            cursor.execute("INSERT INTO ergs (erg_serial, node, subnode, distance, last_update) "
+                           "VALUES (%s, %s, %s, %s, NOW()) "
+                           "ON CONFLICT ON CONSTRAINT unique_serial "
+                           "DO UPDATE SET distance = EXCLUDED.distance, "
+                           "erg_serial = EXCLUDED.erg_serial, "
+                           "last_update = EXCLUDED.last_update,"
+                           "node = EXCLUDED.node,"
+                           "subnode = EXCLUDED.subnode",
+                           (erg["serial"], erg["node"], erg["subnode"], erg["distance"]))
     return "{!s} ergs adding to {!s} meters".format(count, total)
+
+
+@app.route("/input/")
+def show_manual_entry():
+    cur = get_db_cursor()
+    name = request.args.get("name")
+    selected = ""
+    if name is not None:
+        selected = name
+        distance = int(request.args.get("distance"))
+        cur.execute("INSERT INTO ergs (erg_serial, node, subnode, distance, last_update) "
+                        "VALUES (%s, %s, %s, %s, NOW()) "
+                        "ON CONFLICT ON CONSTRAINT unique_serial "
+                        "DO UPDATE SET distance = EXCLUDED.distance, "
+                        "erg_serial = EXCLUDED.erg_serial, "
+                        "last_update = EXCLUDED.last_update,"
+                        "node = EXCLUDED.node,"
+                        "subnode = EXCLUDED.subnode",
+                        (name, -1, 0, distance))
+    
+    cur.execute("SELECT * FROM ergs WHERE node = -1 ORDER BY erg_serial;")
+    erg_matrix = cur.fetchall()
+    erg_list = list()
+    for erg_id, erg_serial, node, subnode, distance, last_update in erg_matrix:
+        erg_list.append({
+            "serial": erg_serial,
+            "distance": distance
+        })
+    return render_template("input.html", erg_list = erg_list)
 
 
 @app.route("/nodes/", methods=["POST"])
