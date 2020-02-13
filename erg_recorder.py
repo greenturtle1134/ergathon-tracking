@@ -62,10 +62,10 @@ class Tracker:
     def update_ergs(self):
         anomaly = False
         for erg in self.ergs:
-            if not(-10 <= erg.update() <= 40000):
+            if not(0 <= erg.update() <= 40000):
                 anomaly = True
         if anomaly:
-            log("Anomalous distance value detected!")
+            log("Incorrect distance value detected!")
             log("Refreshing network topology...")
             self.discover_ergs()
             log("Retrying update.")
