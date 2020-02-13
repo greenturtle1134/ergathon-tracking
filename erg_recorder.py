@@ -88,7 +88,7 @@ class Tracker:
         if response.status_code == 200:
             log("Updated server's node registry.")
         else:
-            log(" ".join(("ERROR:", response.status_code, response.reason, "in sending node data.")))
+            log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending node data.")))
 
     def send_distances(self):
         data = list()
@@ -101,7 +101,7 @@ class Tracker:
             })
         response = requests.put(SERVER + "ergs/", json=data)
         if response.status_code != 200:
-            log(" ".join(("ERROR:", response.status_code, response.reason, "in sending erg data.")))
+            log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending erg data.")))
 
     def __str__(self):
         return "Tracker {} ({}) with ergs {}" .format(self.node_name, self.node_id, self.erg_string())
