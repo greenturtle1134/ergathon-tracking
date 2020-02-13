@@ -5,80 +5,87 @@ from time import sleep
 import requests
 from ctypes import *
 
+DISTANCE_MAX = 40000
+
 SERVER = "https://ergathontracker.sites.tjhsst.edu/"
 DLL_NAME = "erg.dll"
 DLL = None
 
+LOG_PERIOD = 5
+REFRESH_PERIOD = 60
 
-def load_dll(interface_path=""):
+
+def load_dll():
     global DLL
-    if len(interface_path) == 0:
-        interface_path = os.path.dirname(os.path.abspath(__file__)) + "\\lib\\"
-    path = interface_path + DLL_NAME  # Load DLL from lib folder
+    path = os.path.dirname(os.path.abspath(__file__)) + "\\lib\\" + DLL_NAME  # Load DLL from lib folder
     DLL = WinDLL(path)
     print("Loaded interface DLL from {}".format(path))
 
 
 class Erg:
 
-    def __init__(self, serial, port):
+    def __init__(self, serial, subnode):
         self.serial = serial
-        self.port = port
+        self.subnode = subnode
         self.distance = 0
-
-    def update(self):
-        self.distance = DLL.GetDistance(self.port)
-        return self.distance
 
 
 class Tracker:
 
     def __init__(self, node_id, node_name=None):
         self.node_id = node_id
-        if node_name is None or len(node_name) == 0:
-            self.node_name = str(node_id)  # If no node name is given, default to the ID
-        else:
-            self.node_name = node_name
-        self.ergs = list()
+        self.node_name = node_name
+        self.ergs = dict()
+        self.erg_count = 0
 
     def discover_ergs(self):
         start_error = DLL.Init()  # Init the interface and count ergs
         if start_error != 0:
             log("Error on DLL startup: " + str(start_error))
         log("Initialized DLL.")
-        erg_count = DLL.GetNumDevices2()
-        self.ergs = list()
+        self.ergs = dict()
         DLL.GetSerialNumber.restype = c_char_p  # Declare a string return type
         serials = set()
-        for port in range(erg_count):
+        self.erg_count = DLL.GetNumDevices2()
+        for port in range(self.erg_count):
             serial = DLL.GetSerialNumber(port).decode("utf-8")
             if serial in serials:
                 log("ERROR: Repeated serial!")
             serials.add(serial)
-            self.ergs.append(Erg(serial, port))
+            if serial not in self.ergs:
+                self.ergs[serial] = Erg(serial, len(self.ergs))
             log("Discovered erg {}".format(serial))
-        log("Discovered {} erg(s)".format(erg_count))
+        log("Discovered {} erg(s)".format(self.erg_count))
+
+    def do_update(self):
+        if not self.update_ergs():
+            log("Update error. Refreshing ergs.")
+            self.discover_ergs()
+            log("Retrying update.")
+            if not self.update_ergs():
+                log("Error remains.")
+        self.send_distances()
 
     def update_ergs(self):
         anomaly = False
-        for erg in self.ergs:
-            if not(0 <= erg.update() <= 40000):
+        seen = set()
+        for port in range(self.erg_count):
+            serial = DLL.GetSerialNumber(port)
+            if serial is None:
                 anomaly = True
-        if anomaly:
-            log("Incorrect distance value detected!")
-            log("Refreshing network topology...")
-            self.discover_ergs()
-            log("Retrying update.")
-            anomaly = False
-            for erg in self.ergs:
-                if not (-10 <= erg.update() <= 40000):
-                    anomaly = True
-            log(self.erg_string())
-            if anomaly:
-                log("...still broken.")
             else:
-                log("...success!")
-        self.send_distances()
+                serial = serial.decode("utf-8")
+                distance = DLL.GetDistance(port)
+                if serial in self.ergs:
+                    self.ergs[serial].distance = distance
+                else:
+                    anomaly = True
+                if distance < 0 or distance > DISTANCE_MAX:
+                    anomaly = True
+                if serial in seen:
+                    anomaly = True
+                seen.add(serial)
+        return not anomaly
 
     def send_info(self):
         response = requests.post(SERVER + "nodes/", json={
@@ -87,27 +94,30 @@ class Tracker:
         })
         if response.status_code == 200:
             log("Updated server's node registry.")
+            return True
         else:
             log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending node data.")))
+            return False
 
     def send_distances(self):
         data = list()
-        for index, erg in enumerate(self.ergs):
+        for serial in self.ergs:
+            erg = self.ergs[serial]
             data.append({
                 "distance": erg.distance,
                 "serial": erg.serial,
                 "node": self.node_id,
-                "subnode": erg.port,
+                "subnode": erg.subnode,
             })
         response = requests.put(SERVER + "ergs/", json=data)
         if response.status_code != 200:
             log(" ".join(("ERROR:", str(response.status_code), str(response.reason), "in sending erg data.")))
 
     def __str__(self):
-        return "Tracker {} ({}) with ergs {}" .format(self.node_name, self.node_id, self.erg_string())
+        return "Tracker {} ({}) with ergs {}".format(self.node_name, self.node_id, self.erg_string())
 
     def erg_string(self):
-        return ", ".join(("{} ({}m)".format(erg.serial, erg.distance) for erg in self.ergs))
+        return ", ".join(("{} ({}m)".format(self.ergs[erg].serial, self.ergs[erg].distance) for erg in self.ergs))
 
 
 def get_node_name(node_id):
@@ -123,7 +133,7 @@ def log(string):
 
 
 def main():
-    load_dll(input("Enter interface directory (blank for \\lib): "))
+    load_dll()
     tracker_id = int(input("(IMPORTANT) Enter tracker ID: "))
     old_name = get_node_name(tracker_id)
     if old_name is None:
@@ -136,15 +146,6 @@ def main():
         name = old_name
     tracker = Tracker(tracker_id, name)
     tracker.send_info()
-    log_period = 10
-    period_input = input("Enter approx. log period (blank to continue using {}s): ".format(str(log_period)))
-    if len(period_input) > 0:
-        log_period = int(period_input)
-
-    refresh_period = 60
-    period_input = input("Enter approx. re-discover period (blank to continue using {}s): ".format(str(refresh_period)))
-    if len(period_input) > 0:
-        refresh_period = int(period_input)
     print("================\n")
     input("Ready to discover ergs! (Enter to continue)")
     tracker.discover_ergs()
@@ -154,10 +155,10 @@ def main():
     while True:
         sleep(0.8)
         count += 1
-        tracker.update_ergs()
-        if count % log_period == 0:
+        tracker.do_update()
+        if count % LOG_PERIOD == 0:
             log(tracker.erg_string())
-        if count % refresh_period == 0:
+        if count % REFRESH_PERIOD == 0:
             log("Refreshing ergs.")
             tracker.discover_ergs()
 
