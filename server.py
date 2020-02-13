@@ -54,6 +54,8 @@ def show_progress_screen():
         })
     percent = total * 100 / goal
     elapsed = datetime.now() - start_time
+    estimate_remaining = elapsed*(goal-total)/total
+    estimate_end = datetime.now()+estimate_remaining
     speed = total / elapsed.total_seconds()
     if total > 0 and count > 0:
         pace_delta = elapsed / (total / 500 / count)
@@ -64,10 +66,13 @@ def show_progress_screen():
                         sum=total,
                         percent=percent,
                         goal=goal,
-                        time=start_time.strftime("%I:%M:%S %p"),
                         speed=speed,
                         pace=pace,
+                        start=start_time.strftime("%I:%M:%S %p"),
+                        time=datetime.now().strftime("%I:%M:%S %p"),
                         elapsed=str(elapsed).split(".", 2)[0],
+                        remaining = str(estimate_remaining).split(".", 2)[0],
+                        ETA = estimate_end.strftime("%I:%M:%S %p"),
                         erg_list=erg_list,
                         count=count)
 
