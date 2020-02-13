@@ -3,81 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="5">
+    <link rel="stylesheet" type="text/css" href="../templates/styles.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>TJ Ergathon Tracker</title>
-    <style>
-      table,
-      td,
-      th {
-        border: 1px solid black;
-      }
-      table {
-        width: 50%;
-      }
-
-    </style>
+    <link rel="icon" href="../templates/favicon.ico" type="image/x-icon">
 </head>
 <body>
-<h1>TJ 2020 ERGATHON:</h1>
-<h1>{{percent}}% COMPLETE</h1>
-<table>
-    <col width=200>
-    <tr>
-        <td>Meters rowed:</td>
-        <td><strong>{{sum}}</strong></td>
-    </tr>
-    <tr>
-        <td>Goal:</td>
-        <td>{{goal}}</td>
-    </tr>
-    <tr>
-        <td>Total speed:</td>
-        <td><strong>{{speed}}</strong> m/s</td>
-    </tr>
-    <tr>
-        <td>Average split:</td>
-        <td><strong>{{pace}}</strong>/500m</td>
-    </tr>
-    <tr>
-        <td>Start time:</td>
-        <td>{{start}}</td>
-    </tr>
-    <tr>
-        <td>Current time:</td>
-        <td>{{time}}</td>
-    </tr>
-    <tr>
-        <td>Elapsed time:</td>
-        <td><strong>{{elapsed}}</strong></td>
-    </tr>
-    <tr>
-        <td>Estimated time remaining:</td>
-        <td><strong>{{remaining}}</strong></td>
-    </tr>
-    <tr>
-        <td>Estimated finish time:</td>
-        <td><strong>{{ETA}}</strong></td>
-    </tr>
-    <tr>
-        <td>Ergs connected:</td>
-        <td>{{count}}</td>
-    </tr>
-</table>
-<h2>Individual ergs:</h2>
-<table>
-    <tr>
-        <th>Node</th>
-        <th>Serial</th>
-        <th>Distance</th>
-    </tr>
-    {% for item in erg_list %}
-    <tr>
-        <td>{{item.node}}</td>
-        <td>{{item.serial}}</td>
-        <td>{{item.distance}}</td>
-    </tr>
-    {% endfor %}
-</table>
-<i>(Refresh to update. Page will auto-refresh every 5 seconds)</i>
+   <div class="topnav">
+      <p class="titleText">TJ CREW 2020 ERGATHON:</p>
+   </div>
+   <div class="completionBanner">
+      <center>
+         <h1>{{percent}}% COMPLETE</h1>
+      </center>
+      <progress class="progressBar" value={{percent}} max="100"></progress>
+   </div>
+   <div class="smallerTitleTextDiv">
+      <p class="smallerTitleText">Information:</p>
+   </div>
+   <div class="informationDiv">
+      <center>
+         <table>
+             <col width=200>
+             <tr>
+                 <td class="bold">Meters rowed:</td>
+                 <td><strong>{{sum}}</strong></td>
+             </tr>
+             <tr>
+                 <td class="bold">Goal:</td>
+                 <td>{{goal}}</td>
+             </tr>
+             <tr>
+                 <td class="bold">Start time:</td>
+                 <td>{{time}}</td>
+             </tr>
+             <tr>
+                 <td class="bold">Elapsed time:</td>
+                 <td><strong>{{elapsed}}</strong></td>
+             </tr>
+             <tr>
+                 <td class="bold">Total speed:</td>
+                 <td><strong>{{speed}}</strong> m/s</td>
+             </tr>
+             <tr>
+                 <td class="bold">Average split:</td>
+                 <td><strong>{{pace}}</strong>/500m</td>
+             </tr>
+             <tr>
+                 <td class="bold">Estimated time remaining:</td>
+                 <td><strong></strong></td>
+             </tr>
+             <tr>
+                 <td class="bold">Estimated finish time:</td>
+                 <td><strong></strong></td>
+             </tr>
+             <tr>
+                 <td class="bold">Ergs connected:</td>
+                 <td>{{count}}</td>
+             </tr>
+         </table>
+      </center>
+   </div>
+   <div class="smallerTitleTextDiv">
+      <p class="smallerTitleText">Individual Ergs:</p>
+   </div>
+   <div class="informationDiv">
+      <center>
+         <table>
+             <tr>
+                 <th>Node</th>
+                 <th>Serial</th>
+                 <th>Distance</th>
+             </tr>
+             {% for item in erg_list %}
+             <tr>
+                 <td>{{item.node}}</td>
+                 <td>{{item.serial}}</td>
+                 <td>{{item.distance}}</td>
+             </tr>
+             {% endfor %}
+         </table>
+      </center>
+   </div>
+   <i>(Refresh to update. Page will auto-refresh every 5 seconds)</i>
 </body>
 </html>
